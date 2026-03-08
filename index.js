@@ -56,6 +56,31 @@ app.post('/api/create-checkout-session', async (req, res) => {
       },
     });
 
+    // Save order to Supabase immediately
+    try {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY
+      );
+
+      const orderData = {
+        stripe_session_id: session.id,
+        stripe_payment_intent: session.payment_intent || 'pending',
+        customer_email: 'pending',
+        customer_name: 'En attente de paiement',
+        items: items,
+        total_amount: items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
+        currency: 'eur',
+        status: 'pending',
+        payment_status: 'unpaid'
+      };
+
+      await supabase.from('orders').insert([orderData]);
+    } catch (error) {
+      console.error('Error saving order:', error);
+    }
+
     res.json({ sessionId: session.id, url: session.url });
   } catch (error) {
     console.error('Error creating checkout session:', error);
