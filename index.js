@@ -51,6 +51,9 @@ app.post('/api/create-checkout-session', async (req, res) => {
         allowed_countries: ['FR', 'BE', 'CH', 'LU', 'MC', 'DE', 'IT', 'ES', 'NL'],
       },
       billing_address_collection: 'required',
+      phone_number_collection: {
+        enabled: true,
+      },
     });
 
     res.json({ sessionId: session.id, url: session.url });
