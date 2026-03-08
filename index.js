@@ -73,7 +73,9 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       case 'checkout.session.completed':
         const session = event.data.object;
         console.log('Payment successful:', session.id);
-        // TODO: Save order to database, send confirmation email, etc.
+        
+        // Save order to Supabase
+        await saveOrderToDatabase(session);
         break;
       default:
         console.log(`Unhandled event type ${event.type}`);
@@ -85,6 +87,44 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     res.status(400).send(`Webhook Error: ${err.message}`);
   }
 });
+
+// Save order to Supabase
+async function saveOrderToDatabase(session) {
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
+
+    const orderData = {
+      stripe_session_id: session.id,
+      stripe_payment_intent: session.payment_intent,
+      customer_email: session.customer_details.email,
+      customer_name: session.customer_details.name,
+      customer_phone: session.customer_details.phone,
+      shipping_address: session.shipping_details?.address || null,
+      billing_address: session.customer_details?.address || null,
+      items: session.line_items || [],
+      total_amount: session.amount_total / 100,
+      currency: session.currency,
+      status: 'confirmed',
+      payment_status: session.payment_status
+    };
+
+    const { error } = await supabase
+      .from('orders')
+      .insert([orderData]);
+
+    if (error) {
+      console.error('Error saving order:', error);
+    } else {
+      console.log('Order saved successfully');
+    }
+  } catch (error) {
+    console.error('Error in saveOrderToDatabase:', error);
+  }
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
