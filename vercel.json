@@ -11,9 +11,5 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "env": {
-    "STRIPE_SECRET_KEY": "@stripe_secret_key",
-    "FRONTEND_URL": "@frontend_url"
-  }
+  ]
 }
