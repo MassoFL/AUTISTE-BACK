@@ -6,7 +6,9 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*'
+  origin: process.env.NODE_ENV === 'production' 
+    ? (process.env.FRONTEND_URL || 'https://autiste-vetements.vercel.app')
+    : '*'
 }));
 app.use(express.json());
 
